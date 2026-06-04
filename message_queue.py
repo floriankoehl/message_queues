@@ -94,6 +94,7 @@ class MessageQueueManager():
 
     def pop(self, name):
         with self.lock:
+            print([i for i in self.queues.keys()])
             if name not in self.queues: 
                 raise Exception("Queue not found - can not pop elements from non existing queue!")
             else: 
