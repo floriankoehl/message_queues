@@ -37,17 +37,22 @@ def push_to_transactions(message):
 
 
 if __name__ == "__main__":
-    # create_infrastructure()
-    
-    message = {
-        "job_id": "123",
-        "image": "data/image.jpg"
-    }
-    push_to_transactions(message)
-    push_to_transactions(message)
-    push_to_transactions(message)
-    push_to_transactions(message)
-    
+
+    for i in range(7):
+        j = ""
+        if i == 6: 
+            j = ""
+        else: 
+            j = f"_{i}"
+
+        push_to_transactions({
+            "job_id": f"{i}",
+            "image": f"data/image{j}.jpg"
+        })
+
+
+
+
 
 
 

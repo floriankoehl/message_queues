@@ -22,6 +22,11 @@ def run_detection(image_path: str) -> list:
         results = model(image_path)
         detections = []
         for result in results:
+
+            # Safe results
+            result.save(filename=f"outputs/{os.path.basename(image_path)}")
+
+            # Prepare response message
             for box in result.boxes:
                 label = result.names[int(box.cls)]      
                 confidence = float(box.conf)             
@@ -78,8 +83,10 @@ def pull_transactions():
 
 def execute_job(message):
     print("Inside execute job")
-    print(message)
-    time.sleep(3)
+    image_path = message["image"]
+    run_detection(image_path)
+    print(f"Executed task on {image_path}")
+    time.sleep(1)
     pass
 
 
