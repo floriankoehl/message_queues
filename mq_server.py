@@ -3,9 +3,23 @@ from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from message_queue import MessageQueueManager
 import uvicorn
+import threading
+import time
+import json
+
+with open("config.json") as f:
+    config = json.load(f)
 
 app = FastAPI()
 manager = MessageQueueManager()
+manager.load()
+
+def persist_loop():
+    while True:
+        time.sleep(config["persistence_interval"])
+        manager.save()
+
+threading.Thread(target=persist_loop, daemon=True).start()
 
 
 
@@ -47,7 +61,7 @@ def delete_queue(name: str):
 def list_queues():
     try: 
         queues = manager.list_queues()
-        return {"queues": list(queues)}
+        return list(queues)
     except Exception as e: 
         return JSONResponse(
             status_code=409,

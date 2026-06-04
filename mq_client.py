@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import time
 
 PORT = 8000
 URL = f"http://localhost:{PORT}"
@@ -38,7 +39,7 @@ def pop_from_results():
         print("POPPED SUCESFULLY: ", data)
         return data
     else: 
-        print("Something went wrong popping")
+        time.sleep(1)
         
 
 
@@ -47,6 +48,9 @@ def pop_from_results():
 
 
 if __name__ == "__main__":
+    push_imamges_from_dir("data")
+
+
     results = []
 
     while True: 

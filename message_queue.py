@@ -1,6 +1,7 @@
 import threading
 from collections import deque
 import json
+import os
 
 
 
@@ -95,11 +96,25 @@ class MessageQueueManager():
     def pop(self, name):
         with self.lock:
             print([i for i in self.queues.keys()])
-            if name not in self.queues: 
+            if name not in self.queues:
                 raise Exception("Queue not found - can not pop elements from non existing queue!")
-            else: 
+            else:
                 message = self.queues[name].pop()
                 return message
+
+    def save(self, path="queues.json"):
+        with self.lock:
+            data = {name: q.to_dict() for name, q in self.queues.items()}
+        with open(path, "w") as f:
+            json.dump(data, f)
+
+    def load(self, path="queues.json"):
+        if not os.path.exists(path):
+            return
+        with open(path, "r") as f:
+            data = json.load(f)
+        with self.lock:
+            self.queues = {name: MessageQueue.from_dict(q) for name, q in data.items()}
 
 
 
