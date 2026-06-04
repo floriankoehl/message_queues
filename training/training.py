@@ -1,0 +1,177 @@
+
+
+
+
+import time
+
+
+
+import threading
+from collections import deque
+
+class BoundedQueue():
+    def __init__(self, maxsize):
+        self.queue = deque()
+        self.maxsize = maxsize
+        self.lock = threading.Lock()
+    
+    def push(self, item):
+        with self.lock:
+            if len(self.queue) >= self.maxsize:
+                raise Exception("Queue is full!")
+            else: 
+                self.queue.append(item)
+
+    def pop(self):
+        with self.lock: 
+            if len(self.queue) == 0: 
+                raise Exception("Cant pop from empty queue!")
+            else: 
+                return self.queue.popleft()
+
+    def size(self):
+        with self.lock: 
+            return len(self.queue)
+
+    def to_dict(self):
+        with self.lock: 
+            return {
+                "items": [item for item in self.queue],
+                "size": len(self.queue),
+                "maxsize": self.maxsize,
+                "is_full": len(self.queue) >= self.maxsize
+            }
+    
+    @classmethod
+    def from_dict(cls, data):
+        q = cls(data["maxsize"])
+        for item in data["items"]:
+            q.push(item)
+        return q
+
+
+
+
+class RateLimiter():
+    def __init__(self, max_requests, window_seconds):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.requests = {}
+        self.lock = threading.Lock()
+
+    def allow(self, key):
+        now = time.time()
+
+        with self.lock:
+            request_times = self.requests.get(key, deque())
+
+            while request_times and now - request_times[0] >= self.window_seconds:
+                request_times.popleft()
+
+            if len(request_times) >= self.max_requests:
+                self.requests[key] = request_times
+                return False
+
+            request_times.append(now)
+            self.requests[key] = request_times
+            return True
+
+
+
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+import json
+
+
+
+app = FastAPI()
+
+class Item(BaseModel):
+    job: str
+
+with open("config.json", "r") as file: 
+    config = json.load(file)
+max_size = config["max_size"]
+queue = BoundedQueue(max_size)
+rate_limiter = RateLimiter(
+    max_requests=config.get("rate_limit_max_requests", 10),
+    window_seconds=config.get("rate_limit_window_seconds", 60)
+)
+
+
+def check_rate_limit(request: Request):
+    client = request.client.host if request.client else "unknown"
+    if not rate_limiter.allow(client):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Too many requests"}
+        )
+
+    return None
+
+
+
+@app.post("/push")
+def push(item: Item, request: Request):
+    rate_limit_response = check_rate_limit(request)
+    if rate_limit_response:
+        return rate_limit_response
+
+    try: 
+        queue.push(item.job)
+        return {"queue": [item for item in queue.queue]}
+    except Exception as e: 
+        return JSONResponse(
+            status_code=409,
+            content={"error": str(e)}
+        )
+
+
+
+@app.post("/pop")
+def pop(request: Request):
+    rate_limit_response = check_rate_limit(request)
+    if rate_limit_response:
+        return rate_limit_response
+
+    try:
+        item = queue.pop()
+        return {"item": item}
+    except Exception as e: 
+        return JSONResponse(
+            status_code=404, 
+            content={"error": str(e)}
+        )
+        
+
+
+@app.get("/get_items")
+def get_items(request: Request):
+    rate_limit_response = check_rate_limit(request)
+    if rate_limit_response:
+        return rate_limit_response
+
+    return [item for item in queue.queue]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
