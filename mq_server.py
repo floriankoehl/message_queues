@@ -1,17 +1,11 @@
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from message_queue import MessageQueueManager
 import uvicorn
-from pydantic import BaseModel
 
 app = FastAPI()
 manager = MessageQueueManager()
-
-
-class Message(BaseModel):
-    job_id: int
-    image: str
 
 
 
@@ -63,11 +57,11 @@ def list_queues():
 
 
 @app.post("/queues/{name}/messages")
-def push_to_queue(name: str, message: Message):
-    try: 
+def push_to_queue(name: str, message: dict = Body(...)):
+    try:
         manager.push(name, message)
-        return {"message": f"[{str(message.image)}] added sucesfully to queue]!"}
-    except Exception as e: 
+        return {"message": "Message added successfully to queue!"}
+    except Exception as e:
         return JSONResponse(
             status_code=409,
             content={"error": str(e)}

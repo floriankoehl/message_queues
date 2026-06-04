@@ -63,6 +63,11 @@ def run_detection(image_path: str) -> list:
         print(f"YOLO error: {e}")
         return []
     
+
+
+
+
+
 def build_result(job_id, detections):
     result = {
         "job_id": job_id,
@@ -70,37 +75,41 @@ def build_result(job_id, detections):
     }
     return result
 
-
+def unpack_message(message):
+    job_id = message["job_id"]
+    image_path = message["image"]
+    return job_id, image_path
 
 # Pop and Push
-def pull_transactions():
+def pop_transactions():
     response = requests.get(f"{URL}/queues/transactions/messages")
             
     if response.status_code == 200: 
         data = response.json()
         return data
     else: 
-        return
+        pass
     
 def push_results(message):
-    response = requests.push(f"{URL}/queues/results/messages", json=message)
+    response = requests.post(f"{URL}/queues/results/messages", json=message)
 
     if response.status_code == 200: 
         data = response.json()
         return data
     else: 
-        print("Something went wrong when pushing results!", response)
-        return 
+        raise Exception("Pushing result went wrong!", response)
 
 def execute_job():
-    job_id = message["job_id"]
-    image_path = message["image"]
+    message = pop_transactions()
 
-    message = pull_transactions()
     if message: 
+        # For clarity
+        job_id, image_path = unpack_message(message)
+
         detections = run_detection(image_path)
         result = build_result(job_id, detections)
         push_results(result)
+
         print(f"Executed task on {image_path}")
         time.sleep(1)
     else: 
@@ -113,7 +122,7 @@ if __name__ == "__main__":
 
     while True: 
         try: 
-            
+            execute_job()
 
         except Exception as e: 
             print(str(e))

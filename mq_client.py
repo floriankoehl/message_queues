@@ -1,24 +1,10 @@
 import requests
 import json
-
+import os
 
 PORT = 8000
 URL = f"http://localhost:{PORT}"
 
-
-
-# # Initailize Queue
-# def create_transaction_queue():
-#     response = requests.post(f"{URL}/queues/transactions").json()
-#     print(response)
-
-# def create_result_queue():
-#     response = requests.post(f"{URL}/queues/results").json()
-#     print(response)
-
-# def create_infrastructure():
-#     create_transaction_queue()
-#     create_result_queue()
 
 
 def push_to_transactions(message):
@@ -27,9 +13,33 @@ def push_to_transactions(message):
 
     print(response)
 
+def build_message(job_id, image_path):
+    return {
+            "job_id": job_id,
+            "image": image_path
+            }
 
+def push_imamges_from_dir(dir: str) -> list:
+    files = os.listdir(f"{dir}/")
+    print(files)
 
+    for index, file in enumerate(files): 
+        message = build_message(index, f"{dir}/{file}")
+        push_to_transactions(message)
+    
 
+    
+
+def pop_from_results():
+    response = requests.get(f"{URL}/queues/results/messages")
+
+    if response.status_code == 200: 
+        data = response.json()
+        print("POPPED SUCESFULLY: ", data)
+        return data
+    else: 
+        print("Something went wrong popping")
+        
 
 
 
@@ -37,18 +47,15 @@ def push_to_transactions(message):
 
 
 if __name__ == "__main__":
+    results = []
 
-    for i in range(7):
-        j = ""
-        if i == 6: 
-            j = ""
-        else: 
-            j = f"_{i}"
-
-        push_to_transactions({
-            "job_id": f"{i}",
-            "image": f"data/image{j}.jpg"
-        })
+    while True: 
+        try: 
+            result = pop_from_results()
+            results.append(result)
+        except Exception as e: 
+            print(str(e))
+            break
 
 
 
