@@ -23,13 +23,10 @@ threading.Thread(target=persist_loop, daemon=True).start()
 
 
 
-
+# Endpoints
 @app.get("/health")
 def health_check():
     return {"message": "healthy!"}
-
-
-
 
 @app.post("/queues/{name}")
 def create_queue(name: str):
@@ -42,8 +39,6 @@ def create_queue(name: str):
             content={"error": str(e)}
         )
 
-
-
 @app.delete("/queues/{name}")
 def delete_queue(name: str):
     try: 
@@ -54,8 +49,6 @@ def delete_queue(name: str):
             status_code=409,
             content={"error": str(e)}
         )
-
-
 
 @app.get("/queues")
 def list_queues():
@@ -68,8 +61,6 @@ def list_queues():
             content={"error": str(e)}
         )
 
-
-
 @app.post("/queues/{name}/messages")
 def push_to_queue(name: str, message: dict = Body(...)):
     try:
@@ -81,9 +72,6 @@ def push_to_queue(name: str, message: dict = Body(...)):
             content={"error": str(e)}
         )
 
-
-
-
 @app.get("/queues/{name}/messages")
 def pop_from_queue(name: str):
     try: 
@@ -93,8 +81,6 @@ def pop_from_queue(name: str):
             status_code=409,
             content={"error": str(e)}
         )
-
-
 
 @app.get("/get_queue_content/{name}")
 def get_queue_content(name: str):

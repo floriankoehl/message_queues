@@ -26,12 +26,11 @@ def initalize_queue():
     create_result_queue()
 
 
-
 # Execute the job
 def format_detection(label, confidence, bbox):
     return {
         "label": label, 
-        "condifence": confidence,
+        "confidence": confidence,
         "bbox": bbox
     }
 
@@ -44,7 +43,7 @@ def list_detections(results):
             bbox = box.xyxy[0].tolist()            
             detected_box = format_detection(label, confidence, bbox)
             detections.append(detected_box)
-        return detections
+    return detections
 
 def safe_images(results, image_path):
     for result in results:
@@ -64,10 +63,7 @@ def run_detection(image_path: str) -> list:
         return []
     
 
-
-
-
-
+# Helpers
 def build_result(job_id, detections):
     result = {
         "job_id": job_id,
@@ -79,6 +75,7 @@ def unpack_message(message):
     job_id = message["job_id"]
     image_path = message["image"]
     return job_id, image_path
+
 
 # Pop and Push
 def pop_transactions():

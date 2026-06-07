@@ -20,17 +20,15 @@ def build_message(job_id, image_path):
             "image": image_path
             }
 
-def push_imamges_from_dir(dir: str) -> list:
+def push_imamges_from_dir(dir: str) -> int:
     files = os.listdir(f"{dir}/")
     print(files)
 
-    for index, file in enumerate(files): 
+    for index, file in enumerate(files):
         message = build_message(index, f"{dir}/{file}")
         push_to_transactions(message)
+    return len(files)
     
-
-    
-
 def pop_from_results():
     response = requests.get(f"{URL}/queues/results/messages")
 
@@ -48,18 +46,13 @@ def pop_from_results():
 
 
 if __name__ == "__main__":
-    push_imamges_from_dir("data")
-
+    count = push_imamges_from_dir("data")
 
     results = []
-
-    while True: 
-        try: 
-            result = pop_from_results()
+    while len(results) < count:
+        result = pop_from_results()
+        if result:
             results.append(result)
-        except Exception as e: 
-            print(str(e))
-            break
 
 
 
